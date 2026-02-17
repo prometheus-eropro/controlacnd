@@ -187,7 +187,7 @@ const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18w
 
 function loginCND(){
 
-  const usuario = document.getElementById("usuario").value;
+  const usuario = document.getElementById("clienteId").value;
   const senha = document.getElementById("senha").value;
 
   if(!usuario || !senha){
@@ -196,7 +196,6 @@ function loginCND(){
   }
 
   const script = document.createElement("script");
-
   const callbackName = "cb_" + Date.now();
 
   window[callbackName] = function(res){
@@ -204,16 +203,11 @@ function loginCND(){
     document.body.removeChild(script);
     delete window[callbackName];
 
-    if(!res){
-      alert("Servidor não respondeu.");
-      return;
-    }
-
     if(res.ok){
       localStorage.setItem("cliente_id", res.cliente_id);
       window.location.href = "painel.html";
     }else{
-      alert(res.msg || "Erro no login.");
+      alert(res.msg);
     }
   };
 
@@ -224,7 +218,7 @@ function loginCND(){
   };
 
   script.src =
-    "https://script.google.com/macros/s/AKfycbyDSdfY9ILeSHuqg08mo1ruDA1DzgkN7CKDIswZFwXeoa4d9064m_KrxVI_o1j1_AMn/exec" +
+    "SUA_URL_DO_GAS" +
     "?action=loginCND" +
     "&usuario=" + encodeURIComponent(usuario) +
     "&senha=" + encodeURIComponent(senha) +
