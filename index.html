@@ -193,18 +193,16 @@ const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18w
     return;
   }
 
+  const formData = new URLSearchParams();
+  formData.append("action", "loginCND");
+  formData.append("usuario", cliente);
+  formData.append("senha", senha);
+
   try{
 
     const response = await fetch(WEBAPP, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        action: "loginCND",
-        usuario: cliente,
-        senha: senha
-      })
+      body: formData
     });
 
     const d = await response.json();
