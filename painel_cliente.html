@@ -203,10 +203,10 @@ let chartRef = null;
 ========================= */
 function login(){
 
-  const usuario = (document.getElementById("usuario_id").value || "").trim();
+  const cliente_id = (document.getElementById("usuario_id").value || "").trim();
   const senha = (document.getElementById("senha").value || "").trim();
 
-  if(!usuario || !senha){
+  if(!cliente_id || !senha){
     alert("Preencha Usuário e Senha.");
     return;
   }
@@ -214,15 +214,23 @@ function login(){
   document.getElementById("btnLogin").disabled = true;
   document.getElementById("loginStatus").textContent = "Validando...";
 
-  const callbackName = "cb_" + Date.now();
-
-  window[callbackName] = function(r){
+  fetch(API_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      acao:"login",
+      cliente_id: cliente_id,
+      senha: senha
+    })
+  })
+  .then(res=>res.json())
+  .then(r=>{
 
     document.getElementById("btnLogin").disabled = false;
     document.getElementById("loginStatus").textContent = "";
 
     if(!r.ok){
-      alert(r.msg || "Falha no login.");
+      alert(r.erro || "Falha no login.");
       return;
     }
 
@@ -234,18 +242,13 @@ function login(){
 
     carregarCertidoes(true);
 
-    delete window[callbackName];
-  };
-
-  const script = document.createElement("script");
-
-  script.src = API_URL
-    + "?action=loginCND"
-    + "&usuario=" + encodeURIComponent(usuario)
-    + "&senha=" + encodeURIComponent(senha)
-    + "&callback=" + callbackName;
-
-  document.body.appendChild(script);
+  })
+  .catch(err=>{
+    document.getElementById("btnLogin").disabled = false;
+    document.getElementById("loginStatus").textContent = "";
+    alert("Erro no servidor.");
+    console.error(err);
+  });
 }
 function logout(){
   CLIENTE_ID = "";
