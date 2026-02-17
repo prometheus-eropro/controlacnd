@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18wWmD-BZxdEuDBCvSWIK93t9M4GUn-uWWhN6YDu3iZSO6Eg/exec";
+<head>
+<meta charset="UTF-8">
+
+<title>ControleCND - Painel Admin</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#f4f6f9;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+}
+
+input,select,button,textarea{
+  width:100%;
+  padding:8px;
+  margin-top:6px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+button{
+  background:#0b5ed7;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+
+button:hover{
+  background:#084298;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+th,td{
+  border:1px solid #ddd;
+  padding:6px;
+  text-align:left;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🔐 ControleCND - Painel Administrativo</h2>
+
+<div class="card">
+<label>Token de Acesso</label>
+<input type="password" id="token">
+
+<button onclick="carregarCertidoes()">Carregar Certidões</button>
+</div>
+
+<div class="card">
+<h3>📄 Certidões</h3>
+<div id="tabela"></div>
+</div>
+
+<script>
+
+const WEBAPP = "COLE_AQUI_SEU_LINK_WEBAPP";
+const TOKEN_FIXO = "CND2026_PROMETHEUS";
+
+function carregarCertidoes(){
+
+  const token = document.getElementById("token").value;
+
+  if(token !== TOKEN_FIXO){
+    alert("Token inválido");
+    return;
+  }
+
+  fetch(WEBAPP, {
+  method: "POST",
+  body: JSON.stringify({
+    acao:"listarCertidoes",
+    cliente_id:"AC-001"
+  })
+})
+
+  .then(r => r.json())
+  .then(dados => {
+
+    let html = "<table>";
+    html += "<tr><th>Empresa</th><th>Certidão</th><th>Status</th><th>Validade</th><th>Observação</th><th>Ação</th></tr>";
+
+    dados.forEach(item => {
+
+      html += "<tr>";
+      html += "<td>"+item.empresa+"</td>";
+      html += "<td>"+item.tipo+"</td>";
+      html += "<td>"+item.status+"</td>";
+      html += "<td>"+item.validade+"</td>";
+      html += "<td><textarea id='obs_"+item.certidao_id+"'>"+(item.obs||"")+"</textarea></td>";
+      html += "<td><button onclick=\"salvarObs('"+item.certidao_id+"')\">Salvar</button></td>";
+      html += "</tr>";
+
+    });
+
+    html += "</table>";
+
+    document.getElementById("tabela").innerHTML = html;
+
+  });
+
+}
+
+function salvarObs(certidaoId){
+
+  const texto = document.getElementById("obs_"+certidaoId).value;
+
+  fetch(WEBAPP + "?action=salvarObs&certidao_id="+certidaoId+
+        "&texto="+encodeURIComponent(texto)+
+        "&token="+TOKEN_FIXO)
+
+  .then(r=>r.text())
+  .then(resp=>{
+    alert("Salvo com sucesso!");
+  });
+
+}
+
+</script>
+
+</body>
+</html>

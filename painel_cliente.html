@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18wWmD-BZxdEuDBCvSWIK93t9M4GUn-uWWhN6YDu3iZSO6Eg/exec";
+<head>
+<meta charset="UTF-8">
+<title>Painel Cliente - ControlaCND</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+  body{ margin:0; font-family:Segoe UI, Arial; background:#f2f5f9; }
+  header{ background:#0d1b2a; color:#fff; padding:15px 20px; font-size:18px; display:flex; justify-content:space-between; align-items:center; }
+  .container{ padding:20px; max-width:1200px; margin:auto; }
+  .card{ background:#fff; padding:18px; border-radius:10px; box-shadow:0 2px 12px rgba(0,0,0,0.08); margin-bottom:18px; }
+  .row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .col{ flex:1; min-width:220px; }
+  button{ padding:10px 14px; border:none; background:#0d1b2a; color:#fff; cursor:pointer; border-radius:8px; }
+  button.secondary{ background:#1f6feb; }
+  button.gray{ background:#5a6472; }
+  button.danger{ background:#c1121f; }
+  button:disabled{ opacity:.6; cursor:not-allowed; }
+  input, select{ width:100%; padding:10px; border:1px solid #d7dde6; border-radius:8px; outline:none; }
+  table{ width:100%; border-collapse:collapse; }
+  th, td{ padding:10px; border-bottom:1px solid #e8edf3; text-align:left; font-size:14px; vertical-align:top; }
+  th{ background:#f7f9fc; position:sticky; top:0; z-index:1; }
+  .pill{ padding:4px 10px; border-radius:999px; font-weight:700; font-size:12px; display:inline-block; }
+  .ok{ background:#e7f8ef; color:#0a7a3b; }
+  .vencida{ background:#ffe8e8; color:#b00020; }
+  .atencao{ background:#fff1d6; color:#b35a00; }
+  .nao{ background:#eef2f7; color:#4a5568; }
+  .muted{ color:#6b7280; font-size:13px; }
+  .top-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  .alertBox{ background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; padding:12px; border-radius:10px; margin-top:10px; }
+  .hidden{ display:none; }
+
+  /* Modal */
+  .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,0.35); display:none; align-items:center; justify-content:center; padding:20px; z-index:99; }
+  .modal{ background:#fff; width:100%; max-width:520px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.25); overflow:hidden; }
+  .modal-header{ padding:14px 16px; background:#0d1b2a; color:#fff; display:flex; justify-content:space-between; align-items:center; }
+  .modal-body{ padding:16px; }
+  .modal-footer{ padding:14px 16px; display:flex; gap:10px; justify-content:flex-end; background:#f7f9fc; }
+  .x{ background:transparent; border:none; color:#fff; font-size:18px; cursor:pointer; }
+
+  @media print{
+    header, .top-actions, #loginArea, #btnExportarPDF { display:none !important; }
+    .card{ box-shadow:none; border:1px solid #e5e7eb; }
+    th{ position:static; }
+  }
+</style>
+<link rel="icon" href="favicon.ico">
+
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginArea" class="card" style="max-width:520px; margin:30px auto;">
+  <h2 style="margin:0 0 10px 0;">ControlaCND — Login</h2>
+  <p class="muted" style="margin-top:0;">Acesse com seu <b>Cliente ID</b> e sua senha.</p>
+
+  <label class="muted">Cliente ID</label>
+  <input type="text" id="cliente_id" placeholder="Ex: 821">
+
+  <div style="height:10px;"></div>
+
+  <label class="muted">Senha</label>
+  <input type="password" id="senha" placeholder="••••••••">
+
+  <div style="height:14px;"></div>
+
+  <button onclick="login()" id="btnLogin">Entrar</button>
+  <span id="loginStatus" class="muted" style="margin-left:10px;"></span>
+</div>
+
+<!-- PAINEL -->
+<div id="painelArea" class="hidden">
+
+  <header>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <img src="logo.png" style="height:32px;">
+    <div>ControlaCND — Painel do Cliente</div>
+  </div>
+
+  <div class="container">
+
+    <div class="card">
+      <div class="row">
+        <div class="col">
+          <h3 style="margin:0 0 8px 0;">Resumo Geral</h3>
+          <div class="muted">Cliente: <b id="clienteLabel">—</b></div>
+          <div class="muted">Última atualização: <b id="ultimaAtualizacao">—</b></div>
+        </div>
+
+        <div class="col">
+          <div><b>Empresas:</b> <span id="totalEmpresas">0</span></div>
+          <div><b>Certidões OK:</b> <span id="totalOk">0</span></div>
+          <div><b>A vencer (10/5 dias):</b> <span id="totalAtencao">0</span></div>
+          <div><b>Vencidas:</b> <span id="totalVencidas">0</span></div>
+        </div>
+
+        <div class="col">
+          <div class="top-actions" style="justify-content:flex-end;">
+            <button class="secondary" onclick="abrirModalEmpresa()">+ Nova Empresa</button>
+            <button onclick="carregarCertidoes()">Atualizar Consulta</button>
+            <button id="btnExportarPDF" class="gray" onclick="exportarPDF()">Exportar PDF</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="alertaTela" class="alertBox hidden"></div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 12px 0;">Gráfico</h3>
+      <canvas id="graficoCertidoes" height="120"></canvas>
+      <p class="muted" style="margin:10px 0 0 0;">Distribuição do status geral das certidões.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:0 0 12px 0;">Certidões</h3>
+      <div class="muted" style="margin-bottom:10px;">
+        Dica: use o PDF quando existir; observações podem ser preenchidas pelo cliente.
+      </div>
+
+      <div style="overflow:auto; max-height:520px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Empresa</th>
+              <th>Tipo</th>
+              <th>Órgão</th>
+              <th>Validade</th>
+              <th>Dias</th>
+              <th>Status</th>
+              <th>PDF</th>
+              <th>Observação</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaCertidoes"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL NOVA EMPRESA -->
+<div id="modalBackdrop" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <div><b>Cadastrar Empresa</b></div>
+      <button class="x" onclick="fecharModalEmpresa()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="row">
+        <div class="col">
+          <label class="muted">Razão Social</label>
+          <input type="text" id="razao_social" placeholder="Ex: Silva & Associados LTDA">
+        </div>
+      </div>
+      <div style="height:10px;"></div>
+      <div class="row">
+        <div class="col">
+          <label class="muted">CNPJ</label>
+          <input type="text" id="cnpj" placeholder="00.000.000/0000-00">
+        </div>
+        <div class="col">
+          <label class="muted">Município</label>
+          <input type="text" id="municipio" placeholder="Guaçuí">
+        </div>
+        <div class="col">
+          <label class="muted">UF</label>
+          <input type="text" id="uf" placeholder="ES">
+        </div>
+      </div>
+      <div style="height:10px;"></div>
+      <div class="muted">
+        Observação: ao cadastrar, o sistema cria as certidões padrão (Federal, FGTS, INSS e Municipal).
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="gray" onclick="fecharModalEmpresa()">Cancelar</button>
+      <button class="secondary" onclick="cadastrarEmpresa()" id="btnSalvarEmpresa">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHART.JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+/* =========================
+   CONFIG
+========================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18wWmD-BZxdEuDBCvSWIK93t9M4GUn-uWWhN6YDu3iZSO6Eg/exec";
+
+// Se você quiser usar token no backend, descomente e use no GAS também.
+// const TOKEN = "CND2026_PROMETHEUS";
+
+let CLIENTE_ID = "";
+let chartRef = null;
+
+/* =========================
+   LOGIN
+========================= */
+function login(){
+  const cliente = (document.getElementById("cliente_id").value || "").trim();
+  const senha = (document.getElementById("senha").value || "").trim();
+
+  if(!cliente || !senha){
+    alert("Preencha Cliente ID e Senha.");
+    return;
+  }
+
+  document.getElementById("btnLogin").disabled = true;
+  document.getElementById("loginStatus").textContent = "Validando...";
+
+  fetch(API_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      acao:"login",
+      cliente_id: cliente,
+      senha: senha
+      // token: TOKEN
+    })
+  })
+  .then(res=>res.json())
+  .then(r=>{
+    document.getElementById("btnLogin").disabled = false;
+    document.getElementById("loginStatus").textContent = "";
+
+    if(!r.ok){
+      alert(r.erro || "Falha no login.");
+      return;
+    }
+
+    CLIENTE_ID = r.cliente_id || cliente;
+
+    document.getElementById("clienteLabel").textContent = CLIENTE_ID;
+    document.getElementById("loginArea").classList.add("hidden");
+    document.getElementById("painelArea").classList.remove("hidden");
+
+    carregarCertidoes(true);
+  })
+  .catch(err=>{
+    document.getElementById("btnLogin").disabled = false;
+    document.getElementById("loginStatus").textContent = "";
+    alert("Erro ao conectar no servidor.");
+    console.error(err);
+  });
+}
+
+function logout(){
+  CLIENTE_ID = "";
+  document.getElementById("painelArea").classList.add("hidden");
+  document.getElementById("loginArea").classList.remove("hidden");
+}
+
+/* =========================
+   CERTIDÕES
+========================= */
+function carregarCertidoes(mostrarAlertaAoAbrir=false){
+
+  fetch(API_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      acao:"listarCertidoes",
+      cliente_id: CLIENTE_ID
+      // token: TOKEN
+    })
+  })
+  .then(res=>res.json())
+  .then(lista=>{
+
+    if(!Array.isArray(lista)){
+      alert("Retorno inválido do servidor (listarCertidoes).");
+      console.log(lista);
+      return;
+    }
+
+    // contadores
+    let vencidas = 0, atencao = 0, ok = 0;
+    const empresasSet = new Set();
+
+    // para alerta detalhado
+    const alertasDetalhados = [];
+
+    let html = "";
+
+    lista.forEach(c=>{
+      const empresa = String(c.empresa_id ?? "").trim();
+      const tipo = String(c.tipo_certidao ?? "").trim();
+      const orgao = String(c.orgao ?? "").trim();
+      const validade = String(c.data_validade ?? "").trim();
+      const dias = (c.dias_para_vencer === "" || c.dias_para_vencer === null || typeof c.dias_para_vencer === "undefined")
+        ? ""
+        : Number(c.dias_para_vencer);
+
+      const status = String(c.status ?? "").toUpperCase().trim();
+      const pdf = String(c.pdf_url ?? c.pdf_atual ?? "").trim();
+      const obs = String(c.observacoes ?? "").trim();
+
+      if(empresa) empresasSet.add(empresa);
+
+      let badgeClass = "nao";
+      let badgeText = status || "—";
+
+      if(status === "OK"){ ok++; badgeClass="ok"; badgeText="OK"; }
+      if(status === "VENCIDA"){ vencidas++; badgeClass="vencida"; badgeText="VENCIDA"; }
+      if(dias !== "" && dias !== null && dias <= 10 && dias > 0){
+    atencao++;
+    if(status !== "VENCIDA"){ 
+        badgeClass="atencao"; 
+        badgeText="ATENÇÃO"; 
+    }
+}
+       
+      }
+
+      // alerta detalhado
+      if(status === "VENCIDA" || (dias !== "" && dias <= 10)){
+
+        alertasDetalhados.push(`• Empresa ${empresa} — ${tipo} (dias: ${dias === "" ? "—" : dias}) — ${badgeText}`);
+      }
+
+      const pdfLink = pdf ? `<a href="${pdf}" target="_blank">Abrir</a>` : `<span class="muted">—</span>`;
+      const diasTxt = (dias === "" || Number.isNaN(dias)) ? `<span class="muted">—</span>` : dias;
+
+      html += `
+        <tr>
+          <td>${empresa || "—"}</td>
+          <td>${tipo || "—"}</td>
+          <td>${orgao || "—"}</td>
+          <td>${validade || "<span class='muted'>—</span>"}</td>
+          <td>${diasTxt}</td>
+          <td><span class="pill ${badgeClass}">${badgeText}</span></td>
+          <td>${pdfLink}</td>
+          <td>${obs || "<span class='muted'>—</span>"}</td>
+        </tr>
+      `;
+    });
+
+    document.getElementById("tabelaCertidoes").innerHTML = html || `<tr><td colspan="8" class="muted">Nenhum registro encontrado.</td></tr>`;
+
+    // resumo
+    document.getElementById("totalEmpresas").textContent = empresasSet.size;
+    document.getElementById("totalOk").textContent = ok;
+    document.getElementById("totalAtencao").textContent = atencao;
+    document.getElementById("totalVencidas").textContent = vencidas;
+    document.getElementById("ultimaAtualizacao").textContent = new Date().toLocaleString("pt-BR");
+
+    // alerta na tela (sempre) — e alert() só ao abrir
+    const alertaDiv = document.getElementById("alertaTela");
+    if(alertasDetalhados.length){
+      alertaDiv.classList.remove("hidden");
+      alertaDiv.innerHTML = `<b>⚠ Alertas</b><br><br>${alertasDetalhados.join("<br>")}`;
+      if(mostrarAlertaAoAbrir){
+        alert("⚠ ALERTA DO SISTEMA\n\n" + alertasDetalhados.join("\n"));
+      }
+    }else{
+      alertaDiv.classList.add("hidden");
+      alertaDiv.innerHTML = "";
+    }
+
+    // gráfico
+    desenharGrafico(ok, atencao, vencidas);
+  })
+  .catch(err=>{
+    alert("Erro ao buscar certidões.");
+    console.error(err);
+  });
+}
+
+/* =========================
+   GRÁFICO
+========================= */
+function desenharGrafico(ok, atencao, vencidas){
+  const ctx = document.getElementById("graficoCertidoes");
+
+  if(chartRef) chartRef.destroy();
+
+  chartRef = new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: ["OK", "A Vencer (10/5)", "Vencidas"],
+      datasets: [{
+        data: [ok, atencao, vencidas]
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom" }
+      }
+    }
+  });
+}
+
+/* =========================
+   EXPORTAR PDF
+========================= */
+function exportarPDF(){
+  window.print();
+}
+
+/* =========================
+   MODAL EMPRESA
+========================= */
+function abrirModalEmpresa(){
+  document.getElementById("modalBackdrop").style.display = "flex";
+}
+function fecharModalEmpresa(){
+  document.getElementById("modalBackdrop").style.display = "none";
+}
+
+/* =========================
+   CADASTRAR EMPRESA
+========================= */
+function cadastrarEmpresa(){
+  const razao = (document.getElementById("razao_social").value || "").trim();
+  const cnpj = (document.getElementById("cnpj").value || "").trim();
+  const municipio = (document.getElementById("municipio").value || "").trim();
+  const uf = (document.getElementById("uf").value || "").trim().toUpperCase();
+
+  if(!razao || !cnpj || !municipio || !uf){
+    alert("Preencha todos os campos da empresa.");
+    return;
+  }
+
+  document.getElementById("btnSalvarEmpresa").disabled = true;
+
+  fetch(API_URL,{
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify({
+      acao:"cadastrarEmpresa",
+      cliente_id: CLIENTE_ID,
+      razao_social: razao,
+      cnpj: cnpj,
+      municipio: municipio,
+      uf: uf
+      // token: TOKEN
+    })
+  })
+  .then(res=>res.json())
+  .then(r=>{
+    document.getElementById("btnSalvarEmpresa").disabled = false;
+
+    if(!r.ok){
+      alert(r.erro || "Falha ao cadastrar empresa.");
+      return;
+    }
+
+    alert("✅ Empresa cadastrada! As certidões padrão foram criadas.");
+    fecharModalEmpresa();
+
+    // limpar campos
+    document.getElementById("razao_social").value = "";
+    document.getElementById("cnpj").value = "";
+    document.getElementById("municipio").value = "";
+    document.getElementById("uf").value = "";
+
+    carregarCertidoes();
+  })
+  .catch(err=>{
+    document.getElementById("btnSalvarEmpresa").disabled = false;
+    alert("Erro ao cadastrar empresa.");
+    console.error(err);
+  });
+}
+</script>
+
+</body>
+</html>
