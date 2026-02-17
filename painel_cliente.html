@@ -228,12 +228,13 @@ function login(){
     document.getElementById("loginStatus").textContent = "";
 
     if(!r.ok){
-      alert(r.msg || "Falha no login.");
-      return;
-    }
+  alert(r.msg || "Falha no login.");
+  return;
+}
 
-    CLIENTE_ID = r.cliente_id;
+CLIENTE_ID = r.cliente_id;
 
+localStorage.setItem("ultimo_usuario_cnd", usuario);
     document.getElementById("clienteLabel").textContent = CLIENTE_ID;
     document.getElementById("loginArea").classList.add("hidden");
     document.getElementById("painelArea").classList.remove("hidden");
@@ -464,6 +465,13 @@ function cadastrarEmpresa(){
     console.error(err);
   });
 }
+window.onload = function(){
+  const ultimo = localStorage.getItem("ultimo_usuario_cnd");
+  if(ultimo){
+    document.getElementById("usuario_id").value = ultimo;
+  }
+}
+
 </script>
 
 </body>
