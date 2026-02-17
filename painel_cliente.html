@@ -202,51 +202,48 @@ let chartRef = null;
    LOGIN
 ========================= */
 function login(){
-  const usuario = (document.getElementById("usuario_id").value || "").trim();
-  const senha = (document.getElementById("senha").value || "").trim();
+
+  const usuario = document.getElementById("usuario_id").value.trim();
+  const senha = document.getElementById("senha").value.trim();
 
   if(!usuario || !senha){
     alert("Preencha Usuário e Senha.");
     return;
   }
 
-  document.getElementById("btnLogin").disabled = true;
-  document.getElementById("loginStatus").textContent = "Validando...";
+  const callbackName = "loginCallback_" + Date.now();
 
-  fetch(API_URL,{
-    method:"POST",
-    headers:{ "Content-Type":"application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      action: "loginCND",
-      usuario: usuario,
-      senha: senha
-    })
-  })
-  .then(res=>res.json())
-  .then(r=>{
-    document.getElementById("btnLogin").disabled = false;
-    document.getElementById("loginStatus").textContent = "";
+  window[callbackName] = function(res){
 
-    if(!r.ok){
-  alert(r.msg || "Falha no login.");
-  return;
-}
+    document.body.removeChild(script);
+    delete window[callbackName];
 
-CLIENTE_ID = r.cliente_id;
+    if(!res.ok){
+      alert(res.msg || "Usuário ou senha inválidos.");
+      return;
+    }
 
-localStorage.setItem("ultimo_usuario_cnd", usuario);
+    CLIENTE_ID = res.cliente_id;
+
+    localStorage.setItem("cliente_id", CLIENTE_ID);
+    localStorage.setItem("ultimo_usuario_cnd", usuario);
+
     document.getElementById("clienteLabel").textContent = CLIENTE_ID;
     document.getElementById("loginArea").classList.add("hidden");
     document.getElementById("painelArea").classList.remove("hidden");
 
     carregarCertidoes(true);
-  })
-  .catch(err=>{
-    document.getElementById("btnLogin").disabled = false;
-    document.getElementById("loginStatus").textContent = "";
-    alert("Erro ao conectar no servidor.");
-    console.error(err);
-  });
+  };
+
+  const script = document.createElement("script");
+  script.src =
+    API_URL +
+    "?action=loginCND" +
+    "&usuario=" + encodeURIComponent(usuario) +
+    "&senha=" + encodeURIComponent(senha) +
+    "&callback=" + callbackName;
+
+  document.body.appendChild(script);
 }
 function logout(){
   CLIENTE_ID = "";
