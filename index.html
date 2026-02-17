@@ -184,54 +184,50 @@
 const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18wWmD-BZxdEuDBCvSWIK93t9M4GUn-uWWhN6YDu3iZSO6Eg/exec";
 
 
-  function login(){
+function loginCND(){
 
-  const cliente = document.getElementById("cliente").value.trim();
-  const senha = document.getElementById("senha").value.trim();
+  const usuario = document.getElementById("usuario").value;
+  const senha = document.getElementById("senha").value;
 
-  if(!cliente || !senha){
-    alert("Preencha Cliente ID e Senha.");
+  if(!usuario || !senha){
+    alert("Informe usuário e senha.");
     return;
   }
 
-  const callbackName = "callbackLogin_" + Date.now();
+  const script = document.createElement("script");
 
-  let timeout = setTimeout(() => {
-    alert("Servidor não respondeu. Verifique se o GAS está publicado corretamente.");
-  }, 5000);
+  const callbackName = "cb_" + Date.now();
 
   window[callbackName] = function(res){
 
-    clearTimeout(timeout);
-
-    console.log("Resposta do GAS:", res);
+    document.body.removeChild(script);
+    delete window[callbackName];
 
     if(!res){
-      alert("Resposta inválida do servidor.");
+      alert("Servidor não respondeu.");
       return;
     }
 
     if(res.ok){
       localStorage.setItem("cliente_id", res.cliente_id);
-      localStorage.setItem("usuario_nome", res.nome);
-      window.location = "painel_cliente.html";
-    } else {
-      alert(res.msg || "Usuário ou senha inválidos.");
+      window.location.href = "painel.html";
+    }else{
+      alert(res.msg || "Erro no login.");
     }
   };
 
-  const script = document.createElement("script");
+  script.onerror = function(){
+    document.body.removeChild(script);
+    delete window[callbackName];
+    alert("Servidor bloqueado ou indisponível.");
+  };
 
-  script.src = WEBAPP +
+  script.src =
+    "https://script.google.com/macros/s/AKfycbyDSdfY9ILeSHuqg08mo1ruDA1DzgkN7CKDIswZFwXeoa4d9064m_KrxVI_o1j1_AMn/exec" +
     "?action=loginCND" +
-    "&usuario=" + encodeURIComponent(cliente) +
+    "&usuario=" + encodeURIComponent(usuario) +
     "&senha=" + encodeURIComponent(senha) +
     "&callback=" + callbackName;
-
-  script.onerror = function(){
-    clearTimeout(timeout);
-    alert("Erro ao conectar com servidor (script bloqueado).");
-  };
 
   document.body.appendChild(script);
 }
