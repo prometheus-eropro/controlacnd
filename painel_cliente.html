@@ -203,45 +203,47 @@ let chartRef = null;
 ========================= */
 function login(){
 
-  const usuario = document.getElementById("usuario_id").value.trim();
-  const senha = document.getElementById("senha").value.trim();
+  const usuario = (document.getElementById("usuario_id").value || "").trim();
+  const senha = (document.getElementById("senha").value || "").trim();
 
   if(!usuario || !senha){
     alert("Preencha Usuário e Senha.");
     return;
   }
 
-  const callbackName = "loginCallback_" + Date.now();
+  document.getElementById("btnLogin").disabled = true;
+  document.getElementById("loginStatus").textContent = "Validando...";
 
-  window[callbackName] = function(res){
+  const callbackName = "cb_" + Date.now();
 
-    document.body.removeChild(script);
-    delete window[callbackName];
+  window[callbackName] = function(r){
 
-    if(!res.ok){
-      alert(res.msg || "Usuário ou senha inválidos.");
+    document.getElementById("btnLogin").disabled = false;
+    document.getElementById("loginStatus").textContent = "";
+
+    if(!r.ok){
+      alert(r.msg || "Falha no login.");
       return;
     }
 
-    CLIENTE_ID = res.cliente_id;
-
-    localStorage.setItem("cliente_id", CLIENTE_ID);
-    localStorage.setItem("ultimo_usuario_cnd", usuario);
+    CLIENTE_ID = r.cliente_id;
 
     document.getElementById("clienteLabel").textContent = CLIENTE_ID;
     document.getElementById("loginArea").classList.add("hidden");
     document.getElementById("painelArea").classList.remove("hidden");
 
     carregarCertidoes(true);
+
+    delete window[callbackName];
   };
 
   const script = document.createElement("script");
-  script.src =
-    API_URL +
-    "?action=loginCND" +
-    "&usuario=" + encodeURIComponent(usuario) +
-    "&senha=" + encodeURIComponent(senha) +
-    "&callback=" + callbackName;
+
+  script.src = API_URL
+    + "?action=loginCND"
+    + "&usuario=" + encodeURIComponent(usuario)
+    + "&senha=" + encodeURIComponent(senha)
+    + "&callback=" + callbackName;
 
   document.body.appendChild(script);
 }
