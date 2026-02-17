@@ -267,26 +267,21 @@ function carregarCertidoes(mostrarAlertaAoAbrir=false){
     body: JSON.stringify({
       acao:"listarCertidoes",
       cliente_id: CLIENTE_ID
-      // token: TOKEN
     })
   })
   .then(res=>res.json())
   .then(r=>{
 
-  if(!r.ok){
-    alert(r.erro || "Erro ao listar certidões.");
-    return;
-  }
+    if(!r.ok){
+      alert(r.erro || "Erro ao listar certidões.");
+      return;
+    }
 
-  const lista = r.lista;
+    const lista = r.lista;
 
-  if(!Array.isArray(lista)){
-    alert("Retorno inválido do servidor (listarCertidoes).");
-    console.log(r);
-    return;
-  }
+    if(!Array.isArray(lista)){
       alert("Retorno inválido do servidor (listarCertidoes).");
-      console.log(lista);
+      console.log(r);
       return;
     }
 
@@ -300,6 +295,7 @@ function carregarCertidoes(mostrarAlertaAoAbrir=false){
     let html = "";
 
     lista.forEach(c=>{
+
       const empresa = String(c.empresa_id ?? "").trim();
       const tipo = String(c.tipo_certidao ?? "").trim();
       const orgao = String(c.orgao ?? "").trim();
@@ -317,24 +313,40 @@ function carregarCertidoes(mostrarAlertaAoAbrir=false){
       let badgeClass = "nao";
       let badgeText = status || "—";
 
-      if(status === "OK"){ ok++; badgeClass="ok"; badgeText="OK"; }
-      if(status === "VENCIDA"){ vencidas++; badgeClass="vencida"; badgeText="VENCIDA"; }
-      if(dias !== "" && dias !== null && dias <= 10 && dias > 0){
-    atencao++;
-    if(status !== "VENCIDA"){ 
-        badgeClass="atencao"; 
-        badgeText="ATENÇÃO"; 
-    }
-}
-       
-      // alerta detalhado
-      if(status === "VENCIDA" || (dias !== "" && dias <= 10)){
-
-        alertasDetalhados.push(`• Empresa ${empresa} — ${tipo} (dias: ${dias === "" ? "—" : dias}) — ${badgeText}`);
+      if(status === "OK"){
+        ok++;
+        badgeClass="ok";
+        badgeText="OK";
       }
 
-      const pdfLink = pdf ? `<a href="${pdf}" target="_blank">Abrir</a>` : `<span class="muted">—</span>`;
-      const diasTxt = (dias === "" || Number.isNaN(dias)) ? `<span class="muted">—</span>` : dias;
+      if(status === "VENCIDA"){
+        vencidas++;
+        badgeClass="vencida";
+        badgeText="VENCIDA";
+      }
+
+      if(dias !== "" && dias !== null && dias <= 10 && dias > 0){
+        atencao++;
+        if(status !== "VENCIDA"){
+          badgeClass="atencao";
+          badgeText="ATENÇÃO";
+        }
+      }
+
+      // alerta detalhado
+      if(status === "VENCIDA" || (dias !== "" && dias <= 10)){
+        alertasDetalhados.push(
+          `• Empresa ${empresa} — ${tipo} (dias: ${dias === "" ? "—" : dias}) — ${badgeText}`
+        );
+      }
+
+      const pdfLink = pdf
+        ? `<a href="${pdf}" target="_blank">Abrir</a>`
+        : `<span class="muted">—</span>`;
+
+      const diasTxt = (dias === "" || Number.isNaN(dias))
+        ? `<span class="muted">—</span>`
+        : dias;
 
       html += `
         <tr>
@@ -350,23 +362,29 @@ function carregarCertidoes(mostrarAlertaAoAbrir=false){
       `;
     });
 
-    document.getElementById("tabelaCertidoes").innerHTML = html || `<tr><td colspan="8" class="muted">Nenhum registro encontrado.</td></tr>`;
+    document.getElementById("tabelaCertidoes").innerHTML =
+      html || `<tr><td colspan="8" class="muted">Nenhum registro encontrado.</td></tr>`;
 
     // resumo
     document.getElementById("totalEmpresas").textContent = empresasSet.size;
     document.getElementById("totalOk").textContent = ok;
     document.getElementById("totalAtencao").textContent = atencao;
     document.getElementById("totalVencidas").textContent = vencidas;
-    document.getElementById("ultimaAtualizacao").textContent = new Date().toLocaleString("pt-BR");
+    document.getElementById("ultimaAtualizacao").textContent =
+      new Date().toLocaleString("pt-BR");
 
-    // alerta na tela (sempre) — e alert() só ao abrir
+    // alerta visual
     const alertaDiv = document.getElementById("alertaTela");
+
     if(alertasDetalhados.length){
       alertaDiv.classList.remove("hidden");
-      alertaDiv.innerHTML = `<b>⚠ Alertas</b><br><br>${alertasDetalhados.join("<br>")}`;
+      alertaDiv.innerHTML =
+        `<b>⚠ Alertas</b><br><br>${alertasDetalhados.join("<br>")}`;
+
       if(mostrarAlertaAoAbrir){
         alert("⚠ ALERTA DO SISTEMA\n\n" + alertasDetalhados.join("\n"));
       }
+
     }else{
       alertaDiv.classList.add("hidden");
       alertaDiv.innerHTML = "";
@@ -374,6 +392,7 @@ function carregarCertidoes(mostrarAlertaAoAbrir=false){
 
     // gráfico
     desenharGrafico(ok, atencao, vencidas);
+
   })
   .catch(err=>{
     alert("Erro ao buscar certidões.");
