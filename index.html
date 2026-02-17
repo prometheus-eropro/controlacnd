@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <title>ControlaCND — PROMETHEUS EROPRO</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" href="favicon.ico">
+  <link rel="icon" type="image/png" href="logo.png">
+
 
   <style>
     body{
@@ -183,7 +184,7 @@
 const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18wWmD-BZxdEuDBCvSWIK93t9M4GUn-uWWhN6YDu3iZSO6Eg/exec";
 
 
-  async function login(){
+  function login(){
 
   const cliente = document.getElementById("cliente").value.trim();
   const senha = document.getElementById("senha").value.trim();
@@ -193,19 +194,9 @@ const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18w
     return;
   }
 
-  const formData = new URLSearchParams();
-  formData.append("action", "loginCND");
-  formData.append("usuario", cliente);
-  formData.append("senha", senha);
+  const callbackName = "callbackLogin";
 
-  try{
-
-    const response = await fetch(WEBAPP, {
-      method: "POST",
-      body: formData
-    });
-
-    const d = await response.json();
+  window[callbackName] = function(d){
 
     if(d.ok){
       localStorage.setItem("cliente_id", d.cliente_id);
@@ -215,9 +206,17 @@ const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18w
       alert(d.msg || "Falha no login.");
     }
 
-  }catch(err){
-    alert("Erro ao conectar no servidor.");
-  }
+  };
+
+  const script = document.createElement("script");
+
+  script.src = WEBAPP +
+    "?action=loginCND" +
+    "&usuario=" + encodeURIComponent(cliente) +
+    "&senha=" + encodeURIComponent(senha) +
+    "&callback=" + callbackName;
+
+  document.body.appendChild(script);
 }
 </script>
 </body>
