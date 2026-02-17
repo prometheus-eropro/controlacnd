@@ -183,7 +183,8 @@
 const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18wWmD-BZxdEuDBCvSWIK93t9M4GUn-uWWhN6YDu3iZSO6Eg/exec";
 
 
-  function login(){
+  async function login(){
+
   const cliente = document.getElementById("cliente").value.trim();
   const senha = document.getElementById("senha").value.trim();
 
@@ -192,21 +193,33 @@ const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18w
     return;
   }
 
-  fetch(WEBAPP + "?action=loginCND&usuario=" + encodeURIComponent(cliente) + "&senha=" + encodeURIComponent(senha))
-  .then(r=>r.json())
-  .then(d=>{
+  try{
+
+    const response = await fetch(WEBAPP, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        action: "loginCND",
+        usuario: cliente,
+        senha: senha
+      })
+    });
+
+    const d = await response.json();
+
     if(d.ok){
       localStorage.setItem("cliente_id", d.cliente_id);
       localStorage.setItem("usuario_nome", d.nome);
-      window.location="painel_cliente.html";
-    }else{
+      window.location = "painel_cliente.html";
+    } else {
       alert(d.msg || "Falha no login.");
     }
-  })
-  .catch(()=>{
-    alert("Erro ao conectar no servidor.");
-  });
 
+  }catch(err){
+    alert("Erro ao conectar no servidor.");
+  }
 }
 </script>
 </body>
