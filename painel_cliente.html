@@ -271,9 +271,20 @@ function carregarCertidoes(mostrarAlertaAoAbrir=false){
     })
   })
   .then(res=>res.json())
-  .then(lista=>{
+  .then(r=>{
 
-    if(!Array.isArray(lista)){
+  if(!r.ok){
+    alert(r.erro || "Erro ao listar certidões.");
+    return;
+  }
+
+  const lista = r.lista;
+
+  if(!Array.isArray(lista)){
+    alert("Retorno inválido do servidor (listarCertidoes).");
+    console.log(r);
+    return;
+  }
       alert("Retorno inválido do servidor (listarCertidoes).");
       console.log(lista);
       return;
