@@ -194,18 +194,30 @@ const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18w
     return;
   }
 
-  const callbackName = "callbackLogin";
+  const callbackName = "callbackLogin_" + Date.now();
 
-  window[callbackName] = function(d){
+  let timeout = setTimeout(() => {
+    alert("Servidor não respondeu. Verifique se o GAS está publicado corretamente.");
+  }, 5000);
 
-    if(d.ok){
-      localStorage.setItem("cliente_id", d.cliente_id);
-      localStorage.setItem("usuario_nome", d.nome);
-      window.location = "painel_cliente.html";
-    } else {
-      alert(d.msg || "Falha no login.");
+  window[callbackName] = function(res){
+
+    clearTimeout(timeout);
+
+    console.log("Resposta do GAS:", res);
+
+    if(!res){
+      alert("Resposta inválida do servidor.");
+      return;
     }
 
+    if(res.ok){
+      localStorage.setItem("cliente_id", res.cliente_id);
+      localStorage.setItem("usuario_nome", res.nome);
+      window.location = "painel_cliente.html";
+    } else {
+      alert(res.msg || "Usuário ou senha inválidos.");
+    }
   };
 
   const script = document.createElement("script");
@@ -215,6 +227,11 @@ const WEBAPP = "https://script.google.com/macros/s/AKfycbyucyxvz8RrImT2QZqCxW18w
     "&usuario=" + encodeURIComponent(cliente) +
     "&senha=" + encodeURIComponent(senha) +
     "&callback=" + callbackName;
+
+  script.onerror = function(){
+    clearTimeout(timeout);
+    alert("Erro ao conectar com servidor (script bloqueado).");
+  };
 
   document.body.appendChild(script);
 }
