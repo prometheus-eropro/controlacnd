@@ -56,8 +56,8 @@
   <h2 style="margin:0 0 10px 0;">ControlaCND — Login</h2>
   <p class="muted" style="margin-top:0;">Acesse com seu <b>Cliente ID</b> e sua senha.</p>
 
-  <label class="muted">Cliente ID</label>
-  <input type="text" id="cliente_id" placeholder="Ex: 821">
+  <label class="muted">Usuário</label>
+<input type="text" id="usuario_id" placeholder="Ex: U-cnd-01">
 
   <div style="height:10px;"></div>
 
@@ -202,11 +202,11 @@ let chartRef = null;
    LOGIN
 ========================= */
 function login(){
-  const cliente = (document.getElementById("cliente_id").value || "").trim();
+  const usuario = (document.getElementById("usuario_id").value || "").trim();
   const senha = (document.getElementById("senha").value || "").trim();
 
-  if(!cliente || !senha){
-    alert("Preencha Cliente ID e Senha.");
+  if(!usuario || !senha){
+    alert("Preencha Usuário e Senha.");
     return;
   }
 
@@ -215,12 +215,11 @@ function login(){
 
   fetch(API_URL,{
     method:"POST",
-    headers:{ "Content-Type":"text/plain;charset=utf-8" },
-    body: JSON.stringify({
-      acao:"login",
-      cliente_id: cliente,
+    headers:{ "Content-Type":"application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      action: "loginCND",
+      usuario: usuario,
       senha: senha
-      // token: TOKEN
     })
   })
   .then(res=>res.json())
@@ -229,11 +228,11 @@ function login(){
     document.getElementById("loginStatus").textContent = "";
 
     if(!r.ok){
-      alert(r.erro || "Falha no login.");
+      alert(r.msg || "Falha no login.");
       return;
     }
 
-    CLIENTE_ID = r.cliente_id || cliente;
+    CLIENTE_ID = r.cliente_id;
 
     document.getElementById("clienteLabel").textContent = CLIENTE_ID;
     document.getElementById("loginArea").classList.add("hidden");
@@ -248,7 +247,6 @@ function login(){
     console.error(err);
   });
 }
-
 function logout(){
   CLIENTE_ID = "";
   document.getElementById("painelArea").classList.add("hidden");
