@@ -209,7 +209,8 @@ function loginCND(){
 
     if(res.ok){
       localStorage.setItem("cliente_id", res.cliente_id);
-      window.location.href = "painel.html";
+      window.location.href = "painel_cliente.html";
+
     }else{
       alert(res.msg || "Usuário ou senha inválidos.");
     }
